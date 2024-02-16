@@ -33,7 +33,7 @@ class Graph:
     def display(self, colors: list[int] | None = None):
         """Display graph using networkx"""
 
-        if not colors:  # if no color is provided use default color
+        if colors is None:  # if no color is provided use default color
             rescaled_colors = "#1f78b4"
         else:
             assert len(colors) == self.n_vertices, "Coloring must match number of vertices"
