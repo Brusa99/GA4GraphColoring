@@ -6,7 +6,28 @@ from ga4graphcoloring.graphs import Graph
 
 
 class Population:
-    """Population class representing a population of individuals."""
+    """Population of individuals for graph coloring.
+
+    This class represents a population of individuals for the graph coloring problem.
+    The population is initialized with random individuals, and can evolve through selection, crossover and mutation.
+    The indivials are represented as numpy arrays of size n_vertices, where each element represents the color of the
+    corresponding vertex. Each individual can have a maximum of `max_colors` colors.
+
+    Attributes:
+        max_colors (int): The maximum number of colors an individual can have.
+        pop_size (int): The size of the population.
+        graph (Graph): The graph to color.
+        genotype_size (int): The size of the genotype of the individuals.
+        individuals (list[np.ndarray]): The list of individuals in the population.
+
+    Methods:
+        fitness: Calculate the fitness of an individual.
+        crossover: Perform one point crossover between two parents to produce a child.
+        mutate: Mutate an individual.
+        selection: Select an individual from the population using tournament selection.
+        evolve: Perform one generation of evolution.
+        solution: Return the best individual in the population.
+    """
 
     def __init__(self, max_colors: int, pop_size: int, graph: Graph):
         self.max_colors = max_colors
@@ -92,27 +113,23 @@ class Population:
         # tournament = np.random.choice(self.individuals, size=tournament_size, replace=False)
         tournament = random.choices(self.individuals, k=tournament_size)
         fitness_scores = [self.fitness(individual) for individual in tournament]
-        return tournament[np.argmax(fitness_scores)]
+        return tournament[np.argmin(fitness_scores)]
 
     def evolve(self,
                mutation_rate: float | None = None,
                tournament_size: int | None = None,
-               elitism: bool = True) -> float:
+               elitism: bool = True) -> None:
         """Perform one generation of evolution.
 
         This method performs one generation of evolution on the population, consisting of:
-        - Selection: A new population is created by selecting individuals from the current population using tournament
-            selection. If elitism is enabled, the top 10% individuals from the current population are carried over to
-            the new population.
-        - Crossover: Pairs of parents are selected from the current population and crossed over to produce children.
+        - Crossover: Pairs of parents are selected from the current population and crossed over to produce children. The
+        selection of parents is done using tournament selection.
         - Mutation: The children are mutated with a given mutation rate.
 
         Args:
             mutation_rate (float): The mutation rate. Defaults to 1/n_vertices.
             tournament_size (int): The size of the tournament. Defaults to 5.
             elitism (bool): Whether to use elitism. Defaults to True.
-        Returns:
-            float: The minimum fitness value of the new population.
         """
         new_population = []
         if elitism:
@@ -136,9 +153,6 @@ class Population:
         # replace the population
         self.individuals = new_population
 
-        # return the minimum fitness value of the new population
-        return min([self.fitness(individual) for individual in self.individuals])
-
     @property
     def solution(self) -> np.ndarray:
         """Best individual in the population.
@@ -147,3 +161,12 @@ class Population:
             np.ndarray: The best individual in the population.
         """
         return min(self.individuals, key=self.fitness)
+
+    @property
+    def best_fitness(self) -> int:
+        """Best fitness value in the population.
+
+        Returns:
+            int: The fitness value of the best individual in the population.
+        """
+        return self.fitness(self.solution)
