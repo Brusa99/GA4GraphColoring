@@ -26,7 +26,7 @@ class Graph:
         """Constructor method.
 
         Randomly generates a symmetric adjacency matrix for the graph, probability of an edge existing between two
-         vertices is given by the density_factor.
+        vertices is given by the density_factor.
         """
         self.n_vertices = n_vertices
         self._density_factor = density_factor
@@ -48,9 +48,9 @@ class Graph:
             rescaled_colors = "#1f78b4"
         else:
             assert len(colors) == self.n_vertices, "Coloring must match number of vertices"
-            # color arg must be in range [0, 1]
+
             max_color = max(colors)
-            rescaled_colors = colors / max_color
+            rescaled_colors = [c / max_color for c in colors]
 
         # draw graph using networkx
         G = nx.from_numpy_array(self.adj_matrix)
