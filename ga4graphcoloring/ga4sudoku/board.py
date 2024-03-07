@@ -27,6 +27,7 @@ class SudokuTemplate(Graph):
     """
 
     def __init__(self):
+        """Initialize an empty sudoku board."""
         super().__init__(81, 0)
 
         # init the adjacency matrix
@@ -89,6 +90,11 @@ class SudokuTemplate(Graph):
 
 
 def generate_solution() -> np.ndarray:
+    """Generate a random valid sudoku board.
+
+    Returns:
+        np.ndarray: A 9x9 numpy array with a valid (filled) sudoku board.
+    """
     def pattern(row, col): return (3 * (row % 3) + row // 3 + col) % 9
     def shuffle(s): return sample(s, len(s))
     r_base = range(3)
