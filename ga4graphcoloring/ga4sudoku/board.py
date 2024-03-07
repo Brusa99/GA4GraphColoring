@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 from ga4graphcoloring.graphs import Graph
 import sudoku as pysudoku
@@ -42,7 +44,7 @@ class SudokuTemplate(Graph):
 
         self.value_matrix = np.zeros((9, 9), dtype=int)
 
-    def display(self, colors: list[int] | None = None):
+    def display(self, colors: Optional[list[int]] = None):
         """Display the sudoku board.
 
         Prints the sudoku board to the console. If `colors` are provided, the board is printed with the requested
@@ -50,9 +52,9 @@ class SudokuTemplate(Graph):
         cell in the sudoku board. Enumberation is done row by row, starting from the top left corner.
 
         Args:
-            colors (list[int] | None): Vector of length 81 with the numbers to print in the board. If None, the board
-                                       is printed with the numbers stored in the `value_matrix` attribute, by default
-                                       such matrix is filled with zeros.
+            colors (list[int]): Vector of length 81 with the numbers to print in the board. If None, the board is
+                                printed with the numbers stored in the `value_matrix` attribute, by default such matrix
+                                is filled with zeros.
         """
         if colors is not None:
             assert len(colors) == 81, "Coloring must match number of vertices"

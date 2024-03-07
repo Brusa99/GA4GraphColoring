@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 
 import warnings
+from typing import Optional
 
 # suppress warnings from networkx about no data for colormapping provided, as we want the default color in this case
 warnings.filterwarnings("ignore", message="No data for colormapping provided")
@@ -41,7 +42,7 @@ class Graph:
     def __repr__(self):
         return f"Graph (n_vertices={self.n_vertices}, density_factor={self._density_factor})"
 
-    def display(self, colors: list[int] | None = None):
+    def display(self, colors: Optional[list[int]] = None):
         """Display graph using networkx"""
 
         if colors is None:  # if no color is provided use default color

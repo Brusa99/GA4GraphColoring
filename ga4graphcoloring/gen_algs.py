@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import numpy as np
 
@@ -74,7 +75,7 @@ class Population:
         child = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
         return child
 
-    def mutate(self, individual: np.ndarray, mutation_rate: float | None = None) -> np.ndarray:
+    def mutate(self, individual: np.ndarray, mutation_rate: Optional[float] = None) -> np.ndarray:
         """Mutate an individual.
 
         This method performs a mutation on an individual with a given mutation rate, defaulting to 1/n_vertices.
@@ -82,7 +83,7 @@ class Population:
 
         Args:
             individual (np.ndarray): The individual to mutate.
-            mutation_rate (int): The mutation rate.
+            mutation_rate (float): The mutation rate. Defaults to 1/n_vertices.
         Returns:
             np.ndarray: The mutated individual.
         """
@@ -96,7 +97,7 @@ class Population:
                 offspring[i] = np.random.randint(self.max_colors)
         return offspring
 
-    def selection(self, tournament_size: int | None = None) -> np.ndarray:
+    def selection(self, tournament_size: Optional[int] = None) -> np.ndarray:
         """Select an individual from the population using tournament selection.
 
         This method selects an individual from the population using tournament selection.
@@ -116,8 +117,8 @@ class Population:
         return tournament[np.argmin(fitness_scores)]
 
     def evolve(self,
-               mutation_rate: float | None = None,
-               tournament_size: int | None = None,
+               mutation_rate: Optional[float] = None,
+               tournament_size: Optional[int] = None,
                elitism: bool = True) -> None:
         """Perform one generation of evolution.
 
