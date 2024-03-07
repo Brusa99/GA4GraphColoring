@@ -1,7 +1,9 @@
 from typing import Optional
+from random import sample
 
 import numpy as np
 from ga4graphcoloring.graphs import Graph
+from ga4graphcoloring.gen_algs import Population
 import sudoku as pysudoku
 
 
@@ -84,3 +86,69 @@ class SudokuTemplate(Graph):
             # print the row
             print(row)
         print(double_horizontal_line)
+
+
+def generate_solution() -> np.ndarray:
+    def pattern(row, col): return (3 * (row % 3) + row // 3 + col) % 9
+    def shuffle(s): return sample(s, len(s))
+    r_base = range(3)
+    rows = [group * 3 + row for group in shuffle(r_base) for row in shuffle(r_base)]
+    cols = [group * 3 + col for group in shuffle(r_base) for col in shuffle(r_base)]
+    nums = shuffle(range(1, 10))
+
+    # produce the full boars
+    board = [[nums[pattern(r, c)] for c in cols] for r in rows]
+    return np.array(board)
+
+
+class Sudoku(SudokuTemplate):
+    """Partially filled Sudoku board to be solved by the genetic algorithm.
+
+    This class represents a partially filled sudoku board to be solved by the genetic algorithm. The board is generated
+    from a solution by removing numbers with a given probability. Note that, depending on the difficulty, the board may
+    have multiple solutions.
+
+    Attributes:
+        adj_matrix (np.ndarray): The adjacency matrix of the related graph.
+        value_matrix (np.ndarray): The value matrix of the sudoku board. "0" represents an empty cell.
+        solution (np.ndarray): The solution used to obtain the sudoku board.
+
+    Methods:
+        display: Display the sudoku board.
+    """
+
+    def __init__(self, difficulty: float = 0.5, solution: [Population, np.ndarray] = None):
+        """Generate a partially filled sudoku board from a solution by removing numbers with a given probability.
+
+        If no solution is provided, a random solution is generated. Valid solutions are 9x9 or 81x1 numpy arrays with
+        values in the range [1, 9].
+
+        Args:
+            difficulty: probability of removing a number from the solution.
+            solution: Optional. A Population or a numpy array with a valid solution.
+
+        Raises:
+            ValueError: If the solution is not a Population or a numpy array with shape (9, 9) or (81,).
+
+        Notes:
+            The provided solution is not checked for validity. It is assumed that the solution is a valid configuration.
+        """
+        super().__init__()
+
+        # get a flattened solution
+        if solution is None:
+            self.solution = generate_solution().flatten()
+        else:
+            if isinstance(solution, Population):
+                self.solution = solution.solution.flatten()
+            elif isinstance(solution, np.ndarray):
+                assert solution.shape == (9, 9) or solution.shape == (81,), "solution must have 81 values"
+                self.solution = solution.flatten()
+            else:
+                raise ValueError("solution must be a Population or a np.ndarray")
+
+        # remove numbers from the solution to generate a partially filled sudoku
+        mask = np.random.rand(81) < difficulty  # get indexes to remove
+        self.value_matrix = self.solution.copy()
+        self.value_matrix[mask] = 0
+        self.value_matrix = self.value_matrix.reshape(9, 9)

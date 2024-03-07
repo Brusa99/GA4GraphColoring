@@ -1,1 +1,1 @@
-from .board import SudokuTemplate
+from .board import SudokuTemplate, Sudoku
