@@ -31,6 +31,15 @@ class Population:
     """
 
     def __init__(self, max_colors: int, pop_size: int, graph: Graph):
+        """Constructor method.
+
+        Initializes the population with random individuals of size graph.n_vertices.
+
+        Args:
+            max_colors (int): The maximum number of colors an individual can have.
+            pop_size (int): The size of the population.
+            graph (Graph): The graph to color.
+        """
         self.max_colors = max_colors
         self.pop_size = pop_size
         self.graph = graph
@@ -161,6 +170,7 @@ class Population:
         Returns:
             np.ndarray: The best individual in the population.
         """
+        # TODO: consider ordering the individuals by fitness at each step and returning the first
         return min(self.individuals, key=self.fitness)
 
     @property
@@ -171,3 +181,126 @@ class Population:
             int: The fitness value of the best individual in the population.
         """
         return self.fitness(self.solution)
+
+
+class SmartPopulation(Population):
+    """Population of individuals with more suited operators for graph coloring.
+
+    This class is an improvement on the base Population class, with more suited operators for graph coloring problem.
+    The operators are taken from [1]. The main differences are:
+        - Two types of selection: tournament selection with size 2 tournament and top genome selection
+                                  (the best two individuals are selected as parents).
+        - Two types of mutation: random mutation and adjacency mutation (only same color adjacent vertices are mutated).
+        - At each evolution step, half of the population (with worse fitness) is replaced with random individuals.
+    The class decides which operator to use based on the population fitness.
+
+    References:
+        [1] Hindi, Musa & Yampolskiy, Roman. (2012). Genetic Algorithm Applied to the Graph Coloring Problem.
+            Midwest Artificial Intelligence and Cognitive Science Conference. 60.
+    """
+    def __init__(self, max_colors: int, pop_size: int, graph: Graph, change_operator_threshold: int = 4):
+        # inherit doctring from the base class
+        __doc__ = Population.__init__.__doc__ + """
+        - change_operator_threshold (int): The fitness threshold for changing the operator. Defaults to 4.
+        """
+
+        super().__init__(max_colors, pop_size, graph)
+        self.change_operator_threshold = change_operator_threshold
+
+    def mutate(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
+        """Mutate an individual.
+
+        This method performs a mutation on an individual.
+        The mutation operator is chosen based on the population fitness:
+        - If the best fitness is greater than `change_operator_threshold`, the adjacency mutation operator is used.
+        - Otherwise, the random mutation operator is used.
+
+        The adjacency mutation operator changes the color of a violating vertex with a not adjacent color.
+        The random mutation operator changes the color of a violating vertex with a random color.
+
+        Args:
+            individual (np.ndarray): The individual to mutate.
+            mutation_rate (float): The mutation rate. Defaults to 0.7.
+
+        Returns:
+            np.ndarray: The mutated individual.
+        """
+        if self.best_fitness > self.change_operator_threshold:
+            return self._adj_mutation(individual, mutation_rate)
+        else:
+            return self._random_mutation(individual, mutation_rate)
+
+    def _adj_mutation(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
+        """Mutation operator 1: Adjacency mutation. Change color of violating vertex with a not adjacent color."""
+
+        for vertex_ind, color in enumerate(individual):
+            if np.random.rand() < mutation_rate:
+                # get adjacent vertices colors
+                adj_colors = individual[self.graph.adj_matrix[vertex_ind].nonzero()[0]]  # individual[adjacent_vertices]
+
+                # if the vertex has the same color as any of its neighbours, change its color with a not adjacent color
+                if color in adj_colors:
+                    valid_colors = set(range(self.max_colors)) - set(adj_colors)
+                    if valid_colors:  # if there are valid colors
+                        individual[vertex_ind] = random.choice(list(valid_colors))
+                    # TODO: consider selecting a random color if there are none available (paper is not clear on this)
+        return individual
+
+    def _random_mutation(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
+        """Mutation operator 2: Random mutation. Change color of violating vertex with a random color."""
+
+        for vertex_ind, color in enumerate(individual):
+            if np.random.rand() < mutation_rate:
+                # get adjacent vertices colors
+                adj_colors = individual[self.graph.adj_matrix[vertex_ind].nonzero()[0]]  # individual[adjacent_vertices]
+
+                # if the vertex has the same color as any of its neighbours, change its color with a random color
+                if color in adj_colors:
+                    individual[vertex_ind] = np.random.randint(self.max_colors)
+        return individual
+
+    def selection(self, tournament_size: Optional[int] = 2) -> np.ndarray:
+        """Select and individual from the population.
+
+        This method selects an individual from the population using two different selection operators, based on the
+        population fitness:
+        - If the best fitness is greater than `change_operator_threshold`, the tournament selection operator is used.
+        - Otherwise, the top genome selection operator is used.
+
+        Args:
+            tournament_size: Size of the tournament. Only for tournament selection. Defaults to 2.
+
+        Returns:
+            np.ndarray: The selected individual.
+        """
+        if self.best_fitness > self.change_operator_threshold:
+            return self._tournament_selection(tournament_size)
+        else:
+            return self._top_genome_selection()
+
+    def _tournament_selection(self, tournament_size: int = 2) -> np.ndarray:
+        """Selection operator 1: Tournament selection."""
+        return min(random.choices(self.individuals, k=tournament_size), key=self.fitness)
+
+    def _top_genome_selection(self):
+        """Selection operator 2: Top genome selection."""
+        return min(self.individuals, key=self.fitness)
+
+    def evolve(self, mutation_rate: float = 0.7, tournament_size: int = 2):
+        """Perform one generation of evolution.
+
+        This method performs one generation of evolution on the population.
+        Before evolving, the worst half of the population is replaced with random individuals.
+        The evolution consists of selection, crossover and mutation.
+
+        Args:
+            mutation_rate (float): The mutation rate. Defaults to 0.7.
+            tournament_size (int): The size of the selection tournament. Defaults to 2.
+        """
+        # replace the worst half of the population with random individuals
+        self.individuals = sorted(self.individuals, key=self.fitness)[:self.pop_size // 2]
+        while len(self.individuals) < self.pop_size:
+            self.individuals.append(np.random.randint(self.max_colors, size=self.genotype_size))
+
+        # perform evolution as in base class
+        super().evolve(mutation_rate, tournament_size, elitism=False)
