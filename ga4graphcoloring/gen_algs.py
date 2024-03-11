@@ -19,7 +19,7 @@ class Population:
         pop_size (int): The size of the population.
         graph (Graph): The graph to color.
         genotype_size (int): The size of the genotype of the individuals.
-        individuals (list[np.ndarray]): The list of individuals in the population.
+        individuals (list[np.ndarray]): The list of individuals in the population, sorted by fitness.
 
     Methods:
         fitness: Calculate the fitness of an individual.
@@ -47,6 +47,9 @@ class Population:
         # initialize the population with random individuals of size n_vertices
         self.genotype_size = self.graph.n_vertices
         self.individuals = [np.random.randint(max_colors, size=self.genotype_size) for _ in range(self.pop_size)]
+
+        # sort the individuals by fitness to speed up best fitness check, elitism and derived class evolution
+        self.individuals.sort(key=self.fitness)
 
     def fitness(self, individual: np.ndarray) -> int:
         """Calculate the fitness for an individual.
@@ -145,7 +148,7 @@ class Population:
         if elitism:
             n_elites = int(0.1 * self.pop_size)  # round to nearest integer
             # carry the best (first of the list) to the new population
-            elites = sorted(self.individuals, key=self.fitness)[:n_elites]
+            elites = self.individuals[:n_elites]
             new_population.extend(elites)
 
         while len(new_population) < self.pop_size:
@@ -161,7 +164,7 @@ class Population:
             new_population.append(child)
 
         # replace the population
-        self.individuals = new_population
+        self.individuals = new_population.sort(key=self.fitness)
 
     @property
     def solution(self) -> np.ndarray:
@@ -171,7 +174,7 @@ class Population:
             np.ndarray: The best individual in the population.
         """
         # TODO: consider ordering the individuals by fitness at each step and returning the first
-        return min(self.individuals, key=self.fitness)
+        return self.individuals[0]  # individuals are sorted by fitness
 
     @property
     def best_fitness(self) -> int:
@@ -286,7 +289,7 @@ class SmartPopulation(Population):
         """Selection operator 2: Top genome selection."""
         return min(self.individuals, key=self.fitness)
 
-    def evolve(self, mutation_rate: float = 0.7, tournament_size: int = 2):
+    def evolve(self, mutation_rate: float = 0.7, tournament_size: int = 2, **kwargs):
         """Perform one generation of evolution.
 
         This method performs one generation of evolution on the population.
@@ -298,7 +301,7 @@ class SmartPopulation(Population):
             tournament_size (int): The size of the selection tournament. Defaults to 2.
         """
         # replace the worst half of the population with random individuals
-        self.individuals = sorted(self.individuals, key=self.fitness)[:self.pop_size // 2]
+        self.individuals = self.individuals[:self.pop_size // 2]  # individuals are sorted by fitness
         while len(self.individuals) < self.pop_size:
             self.individuals.append(np.random.randint(self.max_colors, size=self.genotype_size))
 
