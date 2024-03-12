@@ -164,7 +164,8 @@ class Population:
             new_population.append(child)
 
         # replace the population
-        self.individuals = new_population.sort(key=self.fitness)
+        new_population.sort(key=self.fitness)
+        self.individuals = new_population
 
     @property
     def solution(self) -> np.ndarray:
