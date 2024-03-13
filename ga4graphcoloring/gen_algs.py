@@ -174,7 +174,6 @@ class Population:
         Returns:
             np.ndarray: The best individual in the population.
         """
-        # TODO: consider ordering the individuals by fitness at each step and returning the first
         return self.individuals[0]  # individuals are sorted by fitness
 
     @property

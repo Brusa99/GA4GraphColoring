@@ -138,6 +138,8 @@ class Sudoku(SudokuTemplate):
 
         Notes:
             The provided solution is not checked for validity. It is assumed that the solution is a valid configuration.
+            Studies show that the difficulty of a sudoku is not only determined by the number of cells removed, but by
+            about 15 - 20 other factors. The difficulty parameter is just a rough approximation.
         """
         super().__init__()
 
