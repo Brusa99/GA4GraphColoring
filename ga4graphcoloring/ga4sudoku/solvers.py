@@ -1,8 +1,9 @@
 from typing import Optional
+import random
 
 import numpy as np
 
-from ga4graphcoloring.gen_algs import Population
+from ga4graphcoloring.gen_algs import Population, SmartPopulation
 from ga4graphcoloring.ga4sudoku.board import Sudoku
 
 
@@ -37,6 +38,7 @@ class SudokuPopulation(Population):
 
         # initialize the population with random individuals of size 81
         self.individuals = [self._initialize_individual() for _ in range(self.pop_size)]
+        self.individuals.sort(key=self.fitness)
 
     def _initialize_individual(self) -> np.ndarray:
         """Initialize a random individual for the sudoku problem."""
@@ -76,4 +78,38 @@ class SudokuPopulation(Population):
         return individual
 
 
+class SmartSudokuPopulation(SmartPopulation, SudokuPopulation):
+    """Implementation of SmartPopulation for the sudoku problem."""
 
+    def __init__(self, pop_size: int, sudoku: Sudoku, change_operator_threshold: int = 4):
+        """Contructor method."""
+        self._genotype_range = list(range(1, 10))
+        SudokuPopulation.__init__(self, pop_size, sudoku)
+        self.change_operator_threshold = change_operator_threshold
+
+    def _adj_mutation(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
+        """Mutation operator 1: Adjacency mutation. Change color of violating vertex with a not adjacent color."""
+        for vertex_ind, color in enumerate(individual):
+            if np.random.rand() < mutation_rate and vertex_ind not in self.blocked_cells:
+                # get adjacent vertices colors
+                adj_colors = individual[self.graph.adj_matrix[vertex_ind].nonzero()[0]]  # individual[adjacent_vertices]
+
+                # if the vertex has the same color as any of its neighbours, change its color with a not adjacent color
+                if color in adj_colors:
+                    valid_colors = set(range(self.max_colors)) - set(adj_colors) - {0}
+                    if valid_colors:  # if there are valid colors
+                        individual[vertex_ind] = random.choice(list(valid_colors))
+                    # TODO: consider selecting a random color if there are none available (paper is not clear on this)
+        return individual
+
+    def _random_mutation(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
+        """Mutation operator 2: Random mutation. Change color of violating vertex with a random color."""
+        for vertex_ind, color in enumerate(individual):
+            if np.random.rand() < mutation_rate and vertex_ind not in self.blocked_cells:
+                # get adjacent vertices colors
+                adj_colors = individual[self.graph.adj_matrix[vertex_ind].nonzero()[0]]  # individual[adjacent_vertices]
+
+                # if the vertex has the same color as any of its neighbours, change its color with a random color
+                if color in adj_colors:
+                    individual[vertex_ind] = random.choice(self._genotype_range)
+        return individual
