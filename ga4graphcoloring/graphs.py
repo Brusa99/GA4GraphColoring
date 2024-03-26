@@ -18,9 +18,6 @@ class Graph:
     Attributes:
         n_vertices (int): The number of vertices in the graph.
         adj_matrix (np.ndarray): The adjacency matrix of the graph.
-
-    Methods:
-        display: Display the graph using networkx.
     """
 
     def __init__(self, n_vertices: int, density_factor: float = 0.5):
@@ -43,7 +40,17 @@ class Graph:
         return f"Graph (n_vertices={self.n_vertices}, density_factor={self._density_factor})"
 
     def display(self, colors: Optional[list[int]] = None):
-        """Display graph using networkx"""
+        """Display graph using networkx.
+
+        Displays the graph as a plot using networkx.
+        If colors are provided, the vertices are colored accordingly. Otherwise, the default color is used.
+
+        Args:
+            colors (list[int]): List of colors for each vertex. If None, the default color is used.
+
+        Notes:
+            Plot size is fixed. Therefore it is recommended to use this method only for small graphs.
+        """
 
         if colors is None:  # if no color is provided use default color
             rescaled_colors = "#1f78b4"

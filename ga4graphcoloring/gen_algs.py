@@ -11,8 +11,9 @@ class Population:
 
     This class represents a population of individuals for the graph coloring problem.
     The population is initialized with random individuals, and can evolve through selection, crossover and mutation.
-    The indivials are represented as numpy arrays of size n_vertices, where each element represents the color of the
-    corresponding vertex. Each individual can have a maximum of `max_colors` colors.
+    The indivials are represented as numpy arrays of size `n_vertices`, where each element represents the color of the
+    corresponding vertex. Each individual can have a maximum of `max_colors` colors. Indviduals are kept sorted by
+    fitness to speed up best fitness check, elitism and derived class evolution.
 
     Attributes:
         max_colors (int): The maximum number of colors an individual can have.
@@ -20,25 +21,17 @@ class Population:
         graph (Graph): The graph to color.
         genotype_size (int): The size of the genotype of the individuals.
         individuals (list[np.ndarray]): The list of individuals in the population, sorted by fitness.
-
-    Methods:
-        fitness: Calculate the fitness of an individual.
-        crossover: Perform one point crossover between two parents to produce a child.
-        mutate: Mutate an individual.
-        selection: Select an individual from the population using tournament selection.
-        evolve: Perform one generation of evolution.
-        solution: Return the best individual in the population.
     """
 
     def __init__(self, max_colors: int, pop_size: int, graph: Graph):
         """Constructor method.
 
-        Initializes the population with random individuals of size graph.n_vertices.
+        Initializes the population with random individuals of size graph.n_vertices. Individuals are sorted by fitness.
 
         Args:
             max_colors (int): The maximum number of colors an individual can have.
             pop_size (int): The size of the population.
-            graph (Graph): The graph to color.
+            graph (Graph): The target graph to color.
         """
         self.max_colors = max_colors
         self.pop_size = pop_size
@@ -54,7 +47,7 @@ class Population:
     def fitness(self, individual: np.ndarray) -> int:
         """Calculate the fitness for an individual.
 
-        Fitness is calculated as the number of edges  the same color.
+        Fitness is calculated as the number of edges connected to same color vertices.
 
         Args:
             individual: The individual to calculate the fitness for.
@@ -76,6 +69,7 @@ class Population:
         """Performs one point crossover between two parents.
 
         This method performs a one point crossover between two parents to produce a (single) child.
+        The crossover point is randomly selected between 0 and `genotype_size` (excluded).
 
         Args:
             parent1: The first parent individual.
@@ -83,15 +77,16 @@ class Population:
         Returns:
             np.ndarray: The child individual produced by the crossover.
         """
-        crossover_point = np.random.randint(1, self.genotype_size)
+        crossover_point = np.random.randint(0, self.genotype_size)
         child = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
         return child
 
     def mutate(self, individual: np.ndarray, mutation_rate: Optional[float] = None) -> np.ndarray:
         """Mutate an individual.
 
-        This method performs a mutation on an individual with a given mutation rate, defaulting to 1/n_vertices.
-        The mutation consists of randomly changing the color of a vertex.
+        This method performs a mutation on an individual with a given mutation rate, defaulting to 1/`n_vertices`.
+        The mutation consists of assigning a random color to a vertex, for each vertex of the individual with the given
+        probability.
 
         Args:
             individual (np.ndarray): The individual to mutate.
@@ -113,7 +108,7 @@ class Population:
         """Select an individual from the population using tournament selection.
 
         This method selects an individual from the population using tournament selection.
-        Selection pressure is controlled by the tournament size, which defaults to 5.
+        Selection pressure is controlled by the tournament size.
 
         Args:
             tournament_size (int): The size of the tournament. Defaults to 5.
@@ -123,7 +118,6 @@ class Population:
         if tournament_size is None:
             tournament_size = 5
 
-        # tournament = np.random.choice(self.individuals, size=tournament_size, replace=False)
         tournament = random.choices(self.individuals, k=tournament_size)
         fitness_scores = [self.fitness(individual) for individual in tournament]
         return tournament[np.argmin(fitness_scores)]
@@ -138,6 +132,9 @@ class Population:
         - Crossover: Pairs of parents are selected from the current population and crossed over to produce children. The
         selection of parents is done using tournament selection.
         - Mutation: The children are mutated with a given mutation rate.
+
+        The population is replaced with the children, keeping the best individuals if elitism is enabled.
+        The method also sorts the population by fitness after the evolution.
 
         Args:
             mutation_rate (float): The mutation rate. Defaults to 1/n_vertices.
@@ -169,20 +166,12 @@ class Population:
 
     @property
     def solution(self) -> np.ndarray:
-        """Best individual in the population.
-
-        Returns:
-            np.ndarray: The best individual in the population.
-        """
+        """Best individual in the population."""
         return self.individuals[0]  # individuals are sorted by fitness
 
     @property
     def best_fitness(self) -> int:
-        """Best fitness value in the population.
-
-        Returns:
-            int: The fitness value of the best individual in the population.
-        """
+        """Best fitness value in the population."""
         return self.fitness(self.solution)
 
 
@@ -193,18 +182,32 @@ class SmartPopulation(Population):
     The operators are taken from [1]. The main differences are:
         - Two types of selection: tournament selection with size 2 tournament and top genome selection
                                   (the best two individuals are selected as parents).
-        - Two types of mutation: random mutation and adjacency mutation (only same color adjacent vertices are mutated).
+        - Two types of mutation: random mutation and adjacency mutation. Only same color adjacent vertices are mutated.
         - At each evolution step, half of the population (with worse fitness) is replaced with random individuals.
-    The class decides which operator to use based on the population fitness.
+    The class decides which operator to use based on the population fitness and a threshold.
+
+    Attributes:
+        max_colors (int): The maximum number of colors an individual can have.
+        pop_size (int): The size of the population.
+        graph (Graph): The graph to color.
+        genotype_size (int): The size of the genotype of the individuals.
+        individuals (list[np.ndarray]): The list of individuals in the population, sorted by fitness.
+        change_operator_threshold (int): The fitness threshold for changing the operators. Defaults to 4.
 
     References:
         [1] Hindi, Musa & Yampolskiy, Roman. (2012). Genetic Algorithm Applied to the Graph Coloring Problem.
             Midwest Artificial Intelligence and Cognitive Science Conference. 60.
     """
     def __init__(self, max_colors: int, pop_size: int, graph: Graph, change_operator_threshold: int = 4):
-        # inherit doctring from the base class
-        __doc__ = Population.__init__.__doc__ + """
-        - change_operator_threshold (int): The fitness threshold for changing the operator. Defaults to 4.
+        """Constructor method, extends base class.
+
+        Initializes the population with random individuals of size graph.n_vertices. Individuals are sorted by fitness.
+
+        Args:
+            max_colors (int): The maximum number of colors an individual can have.
+            pop_size (int): The size of the population.
+            graph (Graph): The target graph to color.
+            change_operator_threshold (int): The fitness threshold for changing the operators. Defaults to 4.
         """
 
         super().__init__(max_colors, pop_size, graph)
@@ -220,6 +223,8 @@ class SmartPopulation(Population):
 
         The adjacency mutation operator changes the color of a violating vertex with a not adjacent color.
         The random mutation operator changes the color of a violating vertex with a random color.
+
+        The method overrides the base class mutate method.
 
         Args:
             individual (np.ndarray): The individual to mutate.
@@ -263,12 +268,14 @@ class SmartPopulation(Population):
         return individual
 
     def selection(self, tournament_size: Optional[int] = 2) -> np.ndarray:
-        """Select and individual from the population.
+        """Select an individual from the population.
 
         This method selects an individual from the population using two different selection operators, based on the
         population fitness:
         - If the best fitness is greater than `change_operator_threshold`, the tournament selection operator is used.
         - Otherwise, the top genome selection operator is used.
+
+        The method overrides the base class selection method.
 
         Args:
             tournament_size: Size of the tournament. Only for tournament selection. Defaults to 2.
@@ -283,10 +290,12 @@ class SmartPopulation(Population):
 
     def _tournament_selection(self, tournament_size: int = 2) -> np.ndarray:
         """Selection operator 1: Tournament selection."""
+
         return min(random.choices(self.individuals, k=tournament_size), key=self.fitness)
 
     def _top_genome_selection(self):
         """Selection operator 2: Top genome selection."""
+
         return min(self.individuals, key=self.fitness)
 
     def evolve(self, mutation_rate: float = 0.7, tournament_size: int = 2, **kwargs):
@@ -295,6 +304,9 @@ class SmartPopulation(Population):
         This method performs one generation of evolution on the population.
         Before evolving, the worst half of the population is replaced with random individuals.
         The evolution consists of selection, crossover and mutation.
+
+        The method extends the base class evolve method by replacing the worst half of the population with random
+        individuals before performing the evolution.
 
         Args:
             mutation_rate (float): The mutation rate. Defaults to 0.7.

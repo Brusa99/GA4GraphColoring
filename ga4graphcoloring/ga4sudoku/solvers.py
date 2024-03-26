@@ -10,10 +10,16 @@ from ga4graphcoloring.ga4sudoku.board import Sudoku
 class SudokuPopulation(Population):
     """Population of individuals for sudoku solving.
 
-    This class represents a population of individuals for the sudoku problem.
+    This class represents a population of individuals for solving the sudoku problem.
     The algorithm is a particular case of the genetic algorithm for graph coloring, where the graph is the sudoku board.
-    Selection, crossover and fitness are performed as in the general genetic algorithm, but the mutation function is
-    modified to respect the given sudoku board.
+    Selection, crossover and fitness are performed as in the base population genetic algorithm, but the mutation
+    function is modified to respect the given sudoku board.
+
+    Attributes:
+        pop_size (int): Size of the population.
+        sudoku (Sudoku): Sudoku object to solve.
+        blocked_cells (np.ndarray): Indices of given cells in the sudoku board, mutation does not affect these cells.
+        genotype_size (int): Number of cells in the sudoku board, fixed to 81.
     """
 
     def __init__(self, pop_size: int, sudoku: Sudoku):
@@ -79,16 +85,31 @@ class SudokuPopulation(Population):
 
 
 class SmartSudokuPopulation(SmartPopulation, SudokuPopulation):
-    """Implementation of SmartPopulation for the sudoku problem."""
+    """Implementation of SmartPopulation for the sudoku problem.
+
+    This class represents a population of individuals for solving the sudoku problem using the SmartPopulation strategy.
+    The class adapts the SmartPopulation methods to fit the sudoku problem. In particular: mutation methods don't change
+    the value of blocked cells.
+    """
 
     def __init__(self, pop_size: int, sudoku: Sudoku, change_operator_threshold: int = 4):
-        """Contructor method."""
+        """Randomly initialize a population of individuals for the sudoku problem.
+
+        Blocked cells are gathered by the sudoku object and are initialized with their value.
+        The rest of the cells are initialized with a random number between 1 and 9 (included).
+
+        Args:
+            pop_size: Size of the population.
+            sudoku: Sudoku object to solve.
+            change_operator_threshold (int): The fitness threshold for changing the operators. Defaults to 4.
+        """
         self._genotype_range = list(range(1, 10))
         SudokuPopulation.__init__(self, pop_size, sudoku)
         self.change_operator_threshold = change_operator_threshold
 
     def _adj_mutation(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
         """Mutation operator 1: Adjacency mutation. Change color of violating vertex with a not adjacent color."""
+
         for vertex_ind, color in enumerate(individual):
             if np.random.rand() < mutation_rate and vertex_ind not in self.blocked_cells:
                 # get adjacent vertices colors
@@ -104,6 +125,7 @@ class SmartSudokuPopulation(SmartPopulation, SudokuPopulation):
 
     def _random_mutation(self, individual: np.ndarray, mutation_rate: float = 0.7) -> np.ndarray:
         """Mutation operator 2: Random mutation. Change color of violating vertex with a random color."""
+
         for vertex_ind, color in enumerate(individual):
             if np.random.rand() < mutation_rate and vertex_ind not in self.blocked_cells:
                 # get adjacent vertices colors

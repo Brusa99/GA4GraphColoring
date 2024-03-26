@@ -4,7 +4,6 @@ from random import sample
 import numpy as np
 from ga4graphcoloring.graphs import Graph
 from ga4graphcoloring.gen_algs import Population
-import sudoku as pysudoku
 
 
 class SudokuTemplate(Graph):
@@ -17,17 +16,20 @@ class SudokuTemplate(Graph):
 
     Attributes:
         adj_matrix (np.ndarray): The adjacency matrix of the graph.
-        value_matrix (np.ndarray): The value matrix of the sudoku board. "0" represents an empty cell.
+        value_matrix (np.ndarray): Matrix that represent the values on the sudoku board. "0" represents an empty cell.
 
-    Methods:
-        display: Display the sudoku board.
-
-    Notes:
-        The sudoku is blanck, to generate a partially full sudoku (to be solved) see the `Sudoku` class.
+    See Also:
+        Sudoku: Partially filled sudoku board to be solved by the genetic algorithm.
     """
 
     def __init__(self):
-        """Initialize an empty sudoku board."""
+        """Initialize an empty sudoku board.
+
+        The adjacency matrix is generated according to the rules of sudoku. Each node is connected to all other nodes
+        in the same row, column and block. The value matrix is initialized with zeros which represent empty cells.
+
+        Sudoku board is a 9x9 grid. Vertex labelling is done row by row, starting from the top left corner.
+        """
         super().__init__(81, 0)
 
         # init the adjacency matrix
@@ -118,9 +120,6 @@ class Sudoku(SudokuTemplate):
         adj_matrix (np.ndarray): The adjacency matrix of the related graph.
         value_matrix (np.ndarray): The value matrix of the sudoku board. "0" represents an empty cell.
         solution (np.ndarray): The solution used to obtain the sudoku board.
-
-    Methods:
-        display: Display the sudoku board.
     """
 
     def __init__(self, difficulty: float = 0.5, solution: [Population, np.ndarray] = None):
@@ -131,7 +130,7 @@ class Sudoku(SudokuTemplate):
 
         Args:
             difficulty: probability of removing a number from the solution.
-            solution: Optional. A Population or a numpy array with a valid solution.
+            solution: Optional. A sudoku-solving Population or a numpy array of size 81 representing a valid solution.
 
         Raises:
             ValueError: If the solution is not a Population or a numpy array with shape (9, 9) or (81,).
