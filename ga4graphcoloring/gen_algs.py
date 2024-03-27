@@ -104,10 +104,11 @@ class Population:
                 offspring[i] = np.random.randint(self.max_colors)
         return offspring
 
-    def selection(self, tournament_size: Optional[int] = None) -> np.ndarray:
-        """Select an individual from the population using tournament selection.
+    def selection(self, tournament_size: Optional[int] = None) -> tuple[np.ndarray]:
+        """Select two individuala from the population using tournament selection.
 
         This method selects an individual from the population using tournament selection.
+        The process is repeated twice to select two individuals.
         Selection pressure is controlled by the tournament size.
 
         Args:
@@ -118,9 +119,12 @@ class Population:
         if tournament_size is None:
             tournament_size = 5
 
-        tournament = random.choices(self.individuals, k=tournament_size)
-        fitness_scores = [self.fitness(individual) for individual in tournament]
-        return tournament[np.argmin(fitness_scores)]
+        selected = []
+        for _ in range(2):
+            tournament = random.choices(self.individuals, k=tournament_size)
+            fitness_scores = [self.fitness(individual) for individual in tournament]
+            selected.append(tournament[np.argmin(fitness_scores)])
+        return selected[0], selected[1]
 
     def evolve(self,
                mutation_rate: Optional[float] = None,
@@ -150,8 +154,7 @@ class Population:
 
         while len(new_population) < self.pop_size:
             # select parents with tournament selection
-            parent1 = self.selection(tournament_size)
-            parent2 = self.selection(tournament_size)
+            parent1, parent2 = self.selection(tournament_size)
 
             # crossover the parents to produce a child and mutate it
             child = self.crossover(parent1, parent2)
@@ -267,13 +270,15 @@ class SmartPopulation(Population):
                     individual[vertex_ind] = np.random.randint(self.max_colors)
         return individual
 
-    def selection(self, tournament_size: Optional[int] = 2) -> np.ndarray:
-        """Select an individual from the population.
+    def selection(self, tournament_size: Optional[int] = 2) -> tuple[np.ndarray]:
+        """Select two individuals from the population.
 
         This method selects an individual from the population using two different selection operators, based on the
         population fitness:
         - If the best fitness is greater than `change_operator_threshold`, the tournament selection operator is used.
         - Otherwise, the top genome selection operator is used.
+
+        The process is repeated twice to select two individuals.
 
         The method overrides the base class selection method.
 
@@ -288,15 +293,15 @@ class SmartPopulation(Population):
         else:
             return self._top_genome_selection()
 
-    def _tournament_selection(self, tournament_size: int = 2) -> np.ndarray:
+    def _tournament_selection(self, tournament_size: int = 2) -> tuple[np.ndarray]:
         """Selection operator 1: Tournament selection."""
 
-        return min(random.choices(self.individuals, k=tournament_size), key=self.fitness)
+        return super().selection(tournament_size)
 
-    def _top_genome_selection(self):
+    def _top_genome_selection(self) -> tuple[np.ndarray]:
         """Selection operator 2: Top genome selection."""
 
-        return min(self.individuals, key=self.fitness)
+        return self.individuals[0], self.individuals[1]  # individuals are sorted by fitness
 
     def evolve(self, mutation_rate: float = 0.7, tournament_size: int = 2, **kwargs):
         """Perform one generation of evolution.
