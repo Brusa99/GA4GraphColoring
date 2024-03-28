@@ -1,7 +1,7 @@
 # GA4GraphColoring
 
-Project for the 2023-23 course of Global and Multi-Objective Optimization at Units.
-The goal of the project is to implement a Genetic Algorithm to solve the Graph Coloring problem.
+Project for the 2023-24 course of Global and Multi-Objective Optimization at Units.
+The goal of the project is to implement a Genetic Algorithm to solve the _Graph Coloring problem_.
 
 ## Description
 
@@ -10,15 +10,15 @@ In this project we implement two Genetic Algorithms to solve the Graph Coloring 
 The Graph Coloring problem consists in assigning a color to each vertex of a graph such that no two adjacent vertices
 have the same color. It is a NP-hard problem.
 
-In particular, we will tackle the decision version of the problem, that is, given a graph G and an integer k, we want to
-know if it is possible to color the graph with k colors. The decision version of the problem is a NP-complete problem.
+In particular, we tackle the decision version of the problem, that is, given a graph $G$ and an integer $k$, we want to
+know if it is possible to color the graph with $k$ colors. The decision version of the problem is a NP-complete problem.
 
-The genetic algorithm is implemented in two ways: the _naive_ version and a more problem-specific version.
+The genetic algorithm is implemented in two ways: a _naive_ version and a more problem-specific version.
 the _naive_ version is a general implementation of a genetic algorithm, while the problem-specific uses more specific
 selection and mutation operators.
 
 Additionally, sudoku problems are a special case of the Graph Coloring problem, where the graph is fixed and a
-9-coloring is searched. An implementations of the algorithm described above is used to solve sudoku problems.
+9-coloring is searched. An implementation of the algorithm described above is used to solve sudoku problems.
 
 ## Installation
 
