@@ -183,10 +183,11 @@ class SmartPopulation(Population):
 
     This class is an improvement on the base Population class, with more suited operators for graph coloring problem.
     The operators are taken from [1]. The main differences are:
-        - Two types of selection: tournament selection with size 2 tournament and top genome selection
-                                  (the best two individuals are selected as parents).
-        - Two types of mutation: random mutation and adjacency mutation. Only same color adjacent vertices are mutated.
-        - At each evolution step, half of the population (with worse fitness) is replaced with random individuals.
+    - Two types of selection: tournament selection with size 2 tournament and top genome selection (the best two
+    individuals are selected as parents).
+    - Two types of mutation: random mutation and adjacency mutation. Only same color adjacent vertices are mutated.
+    - At each evolution step, half of the population (with worse fitness) is replaced with random individuals.
+
     The class decides which operator to use based on the population fitness and a threshold.
 
     Attributes:
